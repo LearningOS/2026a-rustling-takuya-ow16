@@ -2,7 +2,6 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
 
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
@@ -69,15 +68,59 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
-	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+    pub fn merge(list_a: LinkedList<T>, list_b: LinkedList<T>) -> Self
+    where
+        T: PartialOrd,
+    {
+        if list_a.length == 0 {
+            return list_b;
+        } else if list_b.length == 0 {
+            return list_a;
         }
-	}
+
+        let length = list_a.length + list_b.length;
+        let mut a = list_a.start;
+        let mut b = list_b.start;
+        let mut start = None;
+        let mut end: Option<NonNull<Node<T>>> = None;
+
+        unsafe {
+            while let (Some(a_ptr), Some(b_ptr)) = (a, b) {
+                //判断下一个节点是a还是b
+                let next = if a_ptr.as_ref().val <= b_ptr.as_ref().val {
+                    a = a_ptr.as_ref().next;
+                    a_ptr
+                } else {
+                    b = b_ptr.as_ref().next;
+                    b_ptr
+                };
+
+                if let Some(tail) = end {
+                    (*tail.as_ptr()).next = Some(next);
+                } else {
+                    start = Some(next);
+                }
+                end = Some(next);
+            }
+
+            let (remaining, final_end) = if a.is_some() {
+                (a, list_a.end)
+            } else {
+                (b, list_b.end)
+            };
+            if let Some(tail) = end {
+                (*tail.as_ptr()).next = remaining;
+            } else {
+                start = remaining;
+            }
+
+            Self {
+                length,
+                start,
+                end: final_end.or(end),
+            }
+        }
+    }
 }
 
 impl<T> Display for LinkedList<T>
